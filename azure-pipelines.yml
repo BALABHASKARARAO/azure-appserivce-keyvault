@@ -1,0 +1,50 @@
+trigger:
+- main
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Building the application"
+      displayName: 'Build'
+    - script: 'dotnet --info'
+      displayName: 'Command Line Script'
+    - task: UseDotNet@2
+      displayName: 'install dotnet 6'
+      inputs:
+        version: 6.x
+
+    - script: 'dotnet --info'
+      displayName: 'Command Line Script'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: restore
+        projects: ./akvwebapp.csproj
+        arguments: '--configuration Release'
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet build'
+      inputs:
+        command: build
+        projects: ./akvwebapp.csproj
+        arguments: '--configuration Release'
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet test'
+      inputs:
+        command: test
+        projects: ./akvwebapp.csproj
+        arguments: '--configuration Release'
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish'
+      inputs:
+        command: publish
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Pipeline Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: drop
